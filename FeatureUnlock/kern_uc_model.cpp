@@ -26,10 +26,9 @@ static const char *UC_BLACKLISTED_MODELS[] = {
     "MacPro6,1"
 };
 
-static const size_t UC_BLACKLISTED_COUNT = sizeof(UC_BLACKLISTED_MODELS) / sizeof(UC_BLACKLISTED_MODELS[0]);
-
 void UCModelSpoof::init() {
     DBGLOG("featureunlock", "UC: Initializing Universal Control model spoofing");
+    // TODO: Add UCModelSpoof-specific initialization here if needed in future.
 }
 
 bool UCModelSpoof::isBlacklistedModel() {
@@ -40,7 +39,7 @@ bool UCModelSpoof::isBlacklistedModel() {
         return false;
     }
     
-    for (size_t i = 0; i < UC_BLACKLISTED_COUNT; i++) {
+    for (size_t i = 0; i < arrsize(UC_BLACKLISTED_MODELS); i++) {
         if (strcmp(model, UC_BLACKLISTED_MODELS[i]) == 0) {
             DBGLOG("featureunlock", "UC: Detected blacklisted model: %s", model);
             return true;
@@ -118,8 +117,8 @@ int UCModelSpoof::hookedSysctlbyname(const char *name, void *oldp, size_t *oldle
     };
     
     bool isUCProcess = false;
-    for (size_t i = 0; i < sizeof(uc_processes) / sizeof(uc_processes[0]); i++) {
-        if (strstr(procname, uc_processes[i]) != nullptr) {
+    for (size_t i = 0; i < arrsize(uc_processes); i++) {
+        if (strcmp(procname, uc_processes[i]) == 0) {
             isUCProcess = true;
             break;
         }
@@ -132,8 +131,14 @@ int UCModelSpoof::hookedSysctlbyname(const char *name, void *oldp, size_t *oldle
     // Check if the returned model is blacklisted
     char *model = static_cast<char *>(oldp);
     
+    // Ensure null termination
+    if (*oldlenp == 0 || model[*oldlenp - 1] != '\0') {
+        DBGLOG("featureunlock", "UC: hw.model buffer not null-terminated, skipping spoof");
+        return result;
+    }
+    
     bool isBlacklisted = false;
-    for (size_t i = 0; i < UC_BLACKLISTED_COUNT; i++) {
+    for (size_t i = 0; i < arrsize(UC_BLACKLISTED_MODELS); i++) {
         if (strcmp(model, UC_BLACKLISTED_MODELS[i]) == 0) {
             isBlacklisted = true;
             break;

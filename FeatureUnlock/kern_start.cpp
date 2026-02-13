@@ -741,7 +741,9 @@ static void pluginStart() {
             KernelPatcher::RouteRequest("_cs_validate_range", patched_cs_validate_range, orig_cs_validate);
         if (!patcher.routeMultipleLong(KernelPatcher::KernelID, &csRoute, 1))
             SYSLOG(MODULE_SHORT, "failed to route cs validation pages");
-        ucModelSpoof.processKernelPatches(patcher);
+        if (UCModelSpoof::isBlacklistedModel()) {
+            ucModelSpoof.processKernelPatches(patcher);
+        }
     });
 }
 
